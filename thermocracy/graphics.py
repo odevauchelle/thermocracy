@@ -22,8 +22,8 @@ def plot_connectivity( C, ax = None, frame = True, indices = True, frame_style =
     if ax is None :
         ax = gca()
 
-    frame_style = merge( merge( default_frame_style, dict( edgecolor = next(ax._get_lines.prop_cycler)['color'] ) ), frame_style )
-    matrix_style = merge( merge( default_matrix_style, dict( color = frame_style['edgecolor'] ) ), matrix_style )
+    matrix_style = merge( merge( default_matrix_style, dict( color = next(ax._get_lines.prop_cycler)['color']  ) ), matrix_style )
+    frame_style = merge( merge( default_frame_style, dict( edgecolor = matrix_style['color'] ) ), frame_style )
     text_style = merge( default_text_style, text_style )
 
     N = C.shape[0]
