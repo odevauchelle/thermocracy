@@ -16,7 +16,7 @@ def triangles_to_edges( triangles ) :
 
 def triangles_to_node_indices( triangles ) :
 
-    return list( set( triangles.flatten() ) )
+    return list( set( array( triangles ).flatten() ) )
 
 def triangles_to_connectivity( triangles, size = None ) :
 

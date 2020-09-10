@@ -2,6 +2,9 @@ from scipy.sparse import csr_matrix
 from random import getrandbits, randint
 from scipy import array, rand, mean, exp
 
+from .graphics import plot_connectivity
+
+
 def int_to_state_vector( state_int, N ):
     state_bin = bin(state_int)[2:]
     return array( [-1]*( N - len( state_bin ) ) +  [ 2*int(bit) - 1 for bit in state_bin ] )
@@ -23,7 +26,7 @@ def probability( dE, beta ) :
 
 class population :
 
-    def __init__( self, connectivity, epsilon, beta, state = None ) :
+    def __init__( self, connectivity, epsilon, beta, state = None, **kwargs ) :
         '''
         state is an integer
         '''
@@ -39,6 +42,9 @@ class population :
         else :
             self.state = state
 
+    def plot_connectivity( self, *args, **kwargs ) :
+        plot_connectivity( self.connectivity, *args, **kwargs   )
+
     def new_deal( self ) :
         self.state = getrandbits( self.N )
 
@@ -52,6 +58,13 @@ class population :
         bin_state = bin( self.state )[2:]
         bin_state = '0'*( self.N - len(bin_state) ) + bin_state
         self.state = int( '0b' + bin_state[:i] + str( int( not( int( bin_state[i] ) ) ) ) + bin_state[i+1:], 2 )
+
+    def get_opinion( self, state = None ) :
+
+        if state is None :
+            state = self.state
+
+        return len( bin( state )[2:].replace('0','') )
 
     def get_E( self, X = None ) :
 

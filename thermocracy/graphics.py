@@ -17,7 +17,7 @@ default_frame_style = dict( facecolor = 'none', clip_on = False )
 default_matrix_style = dict( complementary_color = 'w' )
 default_text_style = dict( color = 'inverted', va = 'center', ha = 'center' )
 
-def plot_connectivity( C, ax = None, frame = True, indices = True, frame_style = None, matrix_style = None, text_style = None ) :
+def plot_connectivity( C, ax = None, frame = True, index = True, frame_style = None, matrix_style = None, text_style = None ) :
 
     if ax is None :
         ax = gca()
@@ -42,7 +42,7 @@ def plot_connectivity( C, ax = None, frame = True, indices = True, frame_style =
     if frame :
         ax.add_collection( PatchCollection( [ Rectangle( [-.5, -.5 ], N, N ) ], **frame_style ) )
 
-    if text :
+    if index :
 
         invert = text_style['color'] == 'inverted'
 
