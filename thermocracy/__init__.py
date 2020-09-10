@@ -26,7 +26,8 @@ __copyright__ = "Copyright 2020"
 __license__ = "GPL"
 __version__ = "0.0"
 
-__all__ = ['Ising', 'graphics']
+__all__ = ['Ising', 'graphics', 'lattice']
 
 from .Ising import *
 from .graphics import *
+from .lattice import *
