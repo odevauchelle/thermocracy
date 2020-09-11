@@ -4,7 +4,6 @@ from scipy import array, rand, mean, exp
 
 from .graphics import plot_connectivity
 
-
 def int_to_state_vector( state_int, N ):
     state_bin = bin(state_int)[2:]
     return array( [-1]*( N - len( state_bin ) ) +  [ 2*int(bit) - 1 for bit in state_bin ] )
@@ -45,8 +44,14 @@ class population :
     def plot_connectivity( self, *args, **kwargs ) :
         plot_connectivity( self.connectivity, *args, **kwargs   )
 
-    def new_deal( self ) :
-        self.state = getrandbits( self.N )
+    def new_deal( self, opinion = None ) :
+
+        if opinion is None :
+            self.state = getrandbits( self.N )
+        else :
+            state = ( rand( self.N ) < opinion )*2 - 1
+            self.set_state( state )
+
 
     def get_state_vector( self ) :
         return int_to_state_vector( self.state, self.N )
