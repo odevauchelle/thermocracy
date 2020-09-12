@@ -3,6 +3,7 @@ from random import getrandbits, randint
 from scipy import array, rand, mean, exp
 
 from .graphics import plot_connectivity
+from .statistics import *
 
 def int_to_state_vector( state_int, N ):
     state_bin = bin(state_int)[2:]
@@ -110,7 +111,14 @@ class population :
         # reccords
         self.set_state( X )
 
+    def get_neighbors_opinion( self ) :
+        return neighbors_opinion( self.connectivity, self.get_state_vector() )
 
+    def get_number_of_neighbors( self ) :
+        return number_of_neighbors( self.connectivity, self.get_state_vector() )
+
+    def get_number_of_like_minded_neighbors( self ) :
+        return number_of_like_minded_neighbors( self.connectivity, self.get_state_vector() )
 
 if __name__ == '__main__' :
 
