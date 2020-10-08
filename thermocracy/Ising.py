@@ -12,8 +12,14 @@ def int_to_state_vector( state_int, N ):
 def state_vector_to_int( state_vect ):
     return int( '0b' + ''.join( [ str( ( spin + 1 )//2 ) for spin in state_vect ] ), 2 )
 
+def H_terms( X, M, N ) :
+    return ( ( M.dot( X ) ).dot( X )/N, mean( X )**2 )
+
+def H_terms_to_H( terms, epsilon ) :
+    return sum( array( [ -1, epsilon ] )*array( terms ) )
+
 def H( X, M, epsilon, N ):
-    return -( M.dot( X ) ).dot( X )/N + epsilon*mean( X )**2
+    return H_terms_to_H( H_terms( X, M, N ), epsilon )
 
 def dH( X, M, epsilon, N, i ) :
     E_old = H( X, M, epsilon, N )
@@ -72,13 +78,17 @@ class population :
 
         return len( bin( state )[2:].replace('0','') )
 
-    def get_E( self, X = None ) :
+    def get_E_terms( self, X = None ) :
 
         if X is None :
-            return H( self.get_state_vector(), self.connectivity, self.epsilon, self.N )
+            return H_terms( self.get_state_vector(), self.connectivity, self.N )
 
         else :
-            return H( X, self.connectivity, self.epsilon, self.N )
+            return H_terms( X, self.connectivity, self.N )
+
+    def get_E( self, X = None ) :
+
+        return H_terms_to_H( self.get_E_terms( X ), self.epsilon )
 
     def evolve( self, step_number = 1 ) :
 
