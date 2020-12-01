@@ -2,8 +2,18 @@ from scipy.sparse import csr_matrix
 from random import getrandbits, randint
 from scipy import array, rand, mean, exp
 
-from .graphics import plot_connectivity
-from .statistics import *
+if __name__ == '__main__' :
+    from graphics import plot_connectivity
+    from statistics import *
+else :
+    from .graphics import plot_connectivity
+    from .statistics import *
+
+##############################
+#
+# useful functions
+#
+##############################
 
 def int_to_state_vector( state_int, N ):
     state_bin = bin(state_int)[2:]
@@ -11,6 +21,16 @@ def int_to_state_vector( state_int, N ):
 
 def state_vector_to_int( state_vect ):
     return int( '0b' + ''.join( [ str( ( spin + 1 )//2 ) for spin in state_vect ] ), 2 )
+
+def probability( dE, beta ) :
+    p_Boltzmann = exp( -dE*beta )
+    return p_Boltzmann/( 1. + p_Boltzmann )
+
+#########################
+#
+# Hamiltonian fucntions (obsolete soon)
+#
+#########################
 
 def H_terms( X, M, N ) :
     return ( ( M.dot( X ) ).dot( X )/N, mean( X )**2 )
@@ -26,9 +46,100 @@ def dH( X, M, epsilon, N, i ) :
     X[i] *= -1
     return H( X, M, epsilon, N ) - E_old
 
-def probability( dE, beta ) :
-    p_Boltzmann = exp( -dE*beta )
-    return p_Boltzmann/( 1. + p_Boltzmann )
+##########################
+#
+# Hamiltonian term class
+#
+##########################
+
+class HTerm :
+
+    def __init__( self, name, function_E, function_dE = None ) :
+
+        self.function_E = function_E
+        self.name = name
+
+        if function_dE is None :
+            def function_dE( X, i, **kwargs ) :
+                old_E = self.function_E( X = X, **kwargs )
+                X[i] *= -1
+                return  self.function_E( X = X, **kwargs ) - old_E
+
+        self.function_dE = function_dE
+
+    def get_contribution( self, X, i = None, **kwargs ) :
+
+        if i is None :
+            return { self.name: self.function_E( X, **kwargs ) }
+
+        else :
+            return { self.name: self.function_dE( X, i, **kwargs ) }
+
+##########################
+#
+# Hamiltonian class
+#
+##########################
+
+class Hamiltonian :
+
+    def __init__( self, terms, coeffs ) :
+
+        try :
+            terms[0]
+            self.terms = terms
+
+        except :
+            self.terms = [terms]
+
+        try :
+            coeffs[ self.terms[0] ]
+            self.coeffs = coeffs
+
+        except :
+            self.coeffs = {}
+            for k, term in enumerate( terms ) :
+                self.coeffs[ term.name ] = coeffs[k]
+
+    def get_contributions( self,  **kwargs ) :
+
+        contributions = {}
+
+        for term in self.terms :
+            contributions.update( term.get_contribution( **kwards ) )
+
+        return contributions
+
+    def get_energy( self, **kwargs ) :
+
+        energy = 0.
+
+        for name, contribution in self.get_contributions( **kwargs ).items() :
+            ernergy += self.coeffs[name]*contribution
+
+        return energy
+
+##########################
+#
+# Standard Hamiltonian terms
+#
+##########################
+
+neighbors_influence = HTerm(
+    name = 'neighbors',
+    function_E = lambda X, connectivity, **kwargs: ( connectivity.dot( X ) ).dot( X )
+    )
+
+polls_influence = HTerm(
+    name = 'polls',
+    function_E = lambda X, **kwargs: mean(X)**2
+    )
+
+##########################
+#
+# Population class
+#
+##########################
 
 class population :
 
@@ -136,9 +247,16 @@ if __name__ == '__main__' :
 
     from pylab import *
 
+
     C = ( rand(*[5]*2) > .5 )*1
 
     pop = population( connectivity = C, epsilon = 1, beta = 1, state = None )
+
+    X = pop.get_state_vector()
+
+    for term in [neighbors_influence, polls_influence ] :
+        print( term.get_contribution( X, 1, connectivity = C ) )
+
 
     print(pop.connectivity.toarray())
     print(pop.N)
