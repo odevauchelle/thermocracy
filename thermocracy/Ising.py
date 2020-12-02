@@ -26,115 +26,6 @@ def probability( dE, beta ) :
     p_Boltzmann = exp( -dE*beta )
     return p_Boltzmann/( 1. + p_Boltzmann )
 
-#########################
-#
-# Hamiltonian fucntions (obsolete soon)
-#
-#########################
-
-def H_terms( X, M, N ) :
-    return ( ( M.dot( X ) ).dot( X )/N, mean( X )**2 )
-
-def H_terms_to_H( terms, epsilon ) :
-    return sum( array( [ -1, epsilon ] )*array( terms ) )
-
-def H( X, M, epsilon, N ):
-    return H_terms_to_H( H_terms( X, M, N ), epsilon )
-
-def dH( X, M, epsilon, N, i ) :
-    E_old = H( X, M, epsilon, N )
-    X[i] *= -1
-    return H( X, M, epsilon, N ) - E_old
-
-##########################
-#
-# Hamiltonian term class
-#
-##########################
-
-class HTerm :
-
-    def __init__( self, name, function_E, function_dE = None ) :
-
-        self.function_E = function_E
-        self.name = name
-
-        if function_dE is None :
-            def function_dE( X, i, **kwargs ) :
-                old_E = self.function_E( X = X, **kwargs )
-                X[i] *= -1
-                return  self.function_E( X = X, **kwargs ) - old_E
-
-        self.function_dE = function_dE
-
-    def get_contribution( self, X, i = None, **kwargs ) :
-
-        if i is None :
-            return { self.name: self.function_E( X, **kwargs ) }
-
-        else :
-            return { self.name: self.function_dE( X, i, **kwargs ) }
-
-##########################
-#
-# Hamiltonian class
-#
-##########################
-
-class Hamiltonian :
-
-    def __init__( self, terms, coeffs ) :
-
-        try :
-            terms[0]
-            self.terms = terms
-
-        except :
-            self.terms = [terms]
-
-        try :
-            coeffs[ self.terms[0] ]
-            self.coeffs = coeffs
-
-        except :
-            self.coeffs = {}
-            for k, term in enumerate( terms ) :
-                self.coeffs[ term.name ] = coeffs[k]
-
-    def get_contributions( self,  **kwargs ) :
-
-        contributions = {}
-
-        for term in self.terms :
-            contributions.update( term.get_contribution( **kwards ) )
-
-        return contributions
-
-    def get_energy( self, **kwargs ) :
-
-        energy = 0.
-
-        for name, contribution in self.get_contributions( **kwargs ).items() :
-            ernergy += self.coeffs[name]*contribution
-
-        return energy
-
-##########################
-#
-# Standard Hamiltonian terms
-#
-##########################
-
-neighbors_influence = HTerm(
-    name = 'neighbors',
-    function_E = lambda X, connectivity, **kwargs: ( connectivity.dot( X ) ).dot( X )
-    )
-
-polls_influence = HTerm(
-    name = 'polls',
-    function_E = lambda X, **kwargs: mean(X)**2
-    )
-
 ##########################
 #
 # Population class
@@ -143,13 +34,13 @@ polls_influence = HTerm(
 
 class population :
 
-    def __init__( self, connectivity, epsilon, beta, state = None, **kwargs ) :
+    def __init__( self, connectivity, H, beta, state = None, **kwargs ) :
         '''
         state is an integer
         '''
 
         self.connectivity = csr_matrix( connectivity )
-        self.epsilon = epsilon
+        self.H = H
         self.beta = beta
         self.N = self.connectivity.shape[0]
 
@@ -169,7 +60,6 @@ class population :
         else :
             state = ( rand( self.N ) < opinion )*2 - 1
             self.set_state( state )
-
 
     def get_state_vector( self ) :
         return int_to_state_vector( self.state, self.N )
@@ -192,45 +82,33 @@ class population :
     def get_E_terms( self, X = None ) :
 
         if X is None :
-            return H_terms( self.get_state_vector(), self.connectivity, self.N )
+            X = self.get_state_vector()
 
-        else :
-            return H_terms( X, self.connectivity, self.N )
+        return self.H.get_contributions( X = X, connectivity = self.connectivity )
 
     def get_E( self, X = None ) :
 
-        return H_terms_to_H( self.get_E_terms( X ), self.epsilon )
+        if X is None :
+            X = self.get_state_vector()
+
+        return self.H.get_energy( X = X, connectivity = self.connectivity )
 
     def evolve( self, step_number = 1 ) :
-
-        # initialize
-
-        X = self.get_state_vector().copy()
-        E = self.get_E()
 
         for _ in range( step_number ) :
 
             # pick a node
-            n = randint(0,self.N-1)
+            i = randint( 0, self.N - 1 )
 
-            # flip it
-            X[n] *= -1
+            # calculate energy jump associated to flipping this node
 
-            # get new energy:
-            E_new = self.get_E( X )
+            dE = self.H.get_energy( X = self.get_state_vector(), i = i, connectivity = self.connectivity )
 
             # keep or drop according to Boltzmann
 
-            if rand() < probability( E_new - E, self.beta ) :
+            if rand() < probability( dE, self.beta ) :
                 # keep
-                E = E_new
-
-            else :
-                # drop
-                X[n] *= -1
-
-        # reccords
-        self.set_state( X )
+                self.flip(i)
 
     def get_neighbors_opinion( self ) :
         return neighbors_opinion( self.connectivity, self.get_state_vector() )
@@ -246,11 +124,13 @@ if __name__ == '__main__' :
     # print(help(randint))
 
     from pylab import *
-
+    from Hamiltonian import *
 
     C = ( rand(*[5]*2) > .5 )*1
 
-    pop = population( connectivity = C, epsilon = 1, beta = 1, state = None )
+    H = Hamiltonian( terms = [neighbors_influence, polls_influence ], coeffs = [ 1, 1 ] )
+
+    pop = population( connectivity = C, H = H, beta = 1, state = None )
 
     X = pop.get_state_vector()
 

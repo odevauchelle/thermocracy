@@ -26,9 +26,10 @@ __copyright__ = "Copyright 2020"
 __license__ = "GPL"
 __version__ = "0.0"
 
-__all__ = ['Ising', 'graphics', 'lattice', 'statistics']
+__all__ = ['Ising', 'graphics', 'lattice', 'statistics', 'Hamiltonian']
 
 from .Ising import *
 from .graphics import *
 from .lattice import *
 from .statistics import *
+from .Hamiltonian import *
