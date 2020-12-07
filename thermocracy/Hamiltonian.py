@@ -48,13 +48,18 @@ class Hamiltonian :
         except :
             self.terms = [terms]
 
+
+        self.set_coeffs( coeffs )
+
+    def set_coeffs( self, coeffs ) :
+
         try :
             coeffs[ self.terms[0] ]
             self.coeffs = coeffs
 
         except :
             self.coeffs = {}
-            for k, term in enumerate( terms ) :
+            for k, term in enumerate( self.terms ) :
                 self.coeffs[ term.name ] = coeffs[k]
 
     def get_contributions( self,  **kwargs ) :

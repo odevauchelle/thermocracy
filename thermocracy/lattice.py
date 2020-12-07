@@ -18,6 +18,9 @@ def triangles_to_node_indices( triangles ) :
 
     return list( set( array( triangles ).flatten() ) )
 
+def edges_to_connectivity( edges, size ) :
+    return csr_matrix( ( [1]*len( edges ), array( edges ).T ), shape = [ size ]*2 ).transpose()
+
 def triangles_to_connectivity( triangles, size = None ) :
 
     edges = triangles_to_edges( triangles )
@@ -25,7 +28,7 @@ def triangles_to_connectivity( triangles, size = None ) :
     if size is None :
         size = len( triangles_to_node_indices( triangles ) )
 
-    return csr_matrix( ( [1]*len( edges ), array( edges ).T ), shape = [ size ]*2 ).transpose()
+    return edges_to_connectivity( edges, size )
 
 def triangulation_to_connectivity( Th ) :
     return csr_matrix( ( [1]*len( Th.edges ), Th.edges.T ), shape = [ len( Th.x ) ]*2 )
