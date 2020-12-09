@@ -38,13 +38,13 @@ def connectivity_to_dict( connectivity, with_data = True ) :
     connectivity = connectivity.tocoo()
 
     dic = dict(
-        shape = connectivity.shape,
-        row = list( connectivity.row ),
-        col = list( connectivity.col )
+        shape = array( connectivity.shape ).tolist(),
+        row = connectivity.row.tolist(),
+        col = connectivity.col.tolist()
         )
 
     if with_data :
-        dic['data'] = list( connectivity.data )
+        dic['data'] = connectivity.data.tolist()
 
     return dic
 
@@ -54,7 +54,7 @@ def dict_to_connectivity( dic ) :
     except :
         data = [1]*len(dic['row'])
 
-    return csr_matrix( (data, (dic['row'], dic['col'])), shape = dic['shape']  )
+    return csr_matrix( ( data, (dic['row'], dic['col'])), shape = dic['shape']  )
 
 if __name__ == '__main__' :
 
@@ -75,7 +75,8 @@ if __name__ == '__main__' :
     M2 = triangles_to_connectivity( Th.triangles )
 
     print(M1)
-    print(connectivity_to_dict(M2))
+    M3 = connectivity_to_dict(M2)
+    print(type(M3['col'][0]))
     print(dict_to_connectivity(connectivity_to_dict(M2, with_data = False )))
 
     show()
