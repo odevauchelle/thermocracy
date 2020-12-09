@@ -33,6 +33,28 @@ def triangles_to_connectivity( triangles, size = None ) :
 def triangulation_to_connectivity( Th ) :
     return csr_matrix( ( [1]*len( Th.edges ), Th.edges.T ), shape = [ len( Th.x ) ]*2 )
 
+def connectivity_to_dict( connectivity, with_data = True ) :
+
+    connectivity = connectivity.tocoo()
+
+    dic = dict(
+        shape = connectivity.shape,
+        row = list( connectivity.row ),
+        col = list( connectivity.col )
+        )
+
+    if with_data :
+        dic['data'] = list( connectivity.data )
+
+    return dic
+
+def dict_to_connectivity( dic ) :
+    try :
+        data = dic['data']
+    except :
+        data = [1]*len(dic['row'])
+
+    return csr_matrix( (data, (dic['row'], dic['col'])), shape = dic['shape']  )
 
 if __name__ == '__main__' :
 
@@ -52,7 +74,8 @@ if __name__ == '__main__' :
     M1 = triangulation_to_connectivity( Th )
     M2 = triangles_to_connectivity( Th.triangles )
 
-    print(M1.toarray())
-    print(M2.toarray())
+    print(M1)
+    print(connectivity_to_dict(M2))
+    print(dict_to_connectivity(connectivity_to_dict(M2, with_data = False )))
 
     show()
