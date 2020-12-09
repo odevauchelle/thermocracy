@@ -16,7 +16,9 @@ class HTerm :
         self.name = name
 
         if function_dE is None :
+
             def function_dE( X, i, **kwargs ) :
+                X = X.copy()
                 old_E = self.function_E( X = X, **kwargs )
                 X[i] *= -1
                 return  self.function_E( X = X, **kwargs ) - old_E

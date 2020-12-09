@@ -1,6 +1,6 @@
 from scipy.sparse import csr_matrix
 from random import getrandbits, randint
-from scipy import array, rand, mean, exp
+from scipy import array, rand, mean, exp, vectorize
 
 if __name__ == '__main__' :
     from graphics import plot_connectivity
@@ -22,9 +22,17 @@ def int_to_state_vector( state_int, N ):
 def state_vector_to_int( state_vect ):
     return int( '0b' + ''.join( [ str( ( spin + 1 )//2 ) for spin in state_vect ] ), 2 )
 
-def probability( dE, beta ) :
+def probability_Boltzmann( dE, beta ) :
     p_Boltzmann = exp( -dE*beta )
     return p_Boltzmann/( 1. + p_Boltzmann )
+
+def probability( dE, beta ) :
+    if dE*beta < -2 :
+        return 1
+    elif dE*beta > 2 :
+        return 0
+    else :
+        return .5 - dE*beta/4
 
 ##########################
 #
@@ -68,9 +76,9 @@ class population :
         self.state = state_vector_to_int( state_vector )
 
     def flip( self, i ) :
-        bin_state = bin( self.state )[2:]
-        bin_state = '0'*( self.N - len(bin_state) ) + bin_state
-        self.state = int( '0b' + bin_state[:i] + str( int( not( int( bin_state[i] ) ) ) ) + bin_state[i+1:], 2 )
+        state_vector = self.get_state_vector()
+        state_vector[i] *= -1
+        self.set_state(state_vector)
 
     def get_opinion( self, state = None ) :
 
@@ -145,3 +153,11 @@ if __name__ == '__main__' :
     print(pop.get_state_vector(), pop.get_E())
     pop.flip(flip_i)
     print(pop.get_state_vector(), pop.get_E())
+
+
+    dE = linspace(-1,1,100)*3
+    p = [ probability( dE_single, beta = 1 ) for dE_single in dE ]
+    plot(dE, p )
+    fill_between(dE, p, alpha = .1 )
+    plot(dE, probability_Boltzmann(dE, beta = 1), '--')
+    show()
