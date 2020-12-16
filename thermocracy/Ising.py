@@ -24,7 +24,7 @@ def state_vector_to_int( state_vect ):
 
 def default_acceptance_probability( dE, beta ) :
     '''
-    Metropolis-Hasting acceptance probability.
+    Metropolis-Hasting acceptance probability
     a = min( [ 1, exp( -dE*beta ) ] )
     '''
     return min( [ 1, exp( -dE*beta ) ] )
@@ -46,6 +46,7 @@ class population :
         self.H = H
         self.beta = beta
         self.N = self.connectivity.shape[0]
+        self.E = None
 
         if acceptance_probability is None :
             self.acceptance_probability = default_acceptance_probability
@@ -59,60 +60,78 @@ class population :
     def plot_connectivity( self, *args, **kwargs ) :
         plot_connectivity( self.connectivity, *args, **kwargs   )
 
-    def new_deal( self, opinion = None ) :
+    def new_deal( self, magnetization = None ) :
 
-        if opinion is None :
-            self.state = getrandbits( self.N )
-        else :
-            state = ( rand( self.N ) < opinion )*2 - 1
-            self.set_state( state )
+        if magnetization is None :
+            magnetization = 0.
 
-    def get_state_vector( self ) :
-        return int_to_state_vector( self.state, self.N )
+        self.set_state( ( rand( self.N ) < ( 1 + magnetization )/2 )*2 - 1 )
+    #
+    # def get_state_vector( self ) :
+    #     return self.state
 
-    def set_state( self, state_vector ) :
-        self.state = state_vector_to_int( state_vector )
+    def get_integer_state( self ) :
+        return state_vector_to_int( self.state )
+
+    def set_state( self, state ) :
+        self.state = state
+        self.E = None
 
     def flip( self, i ) :
-        state_vector = self.get_state_vector()
-        state_vector[i] *= -1
-        self.set_state(state_vector)
+        self.state[i] *= -1
+        self.E = None
 
-    def get_opinion( self, state = None ) :
-
-        if state is None :
-            state = self.state
-
-        return len( bin( state )[2:].replace('0','') )
+    # def get_opinion( self, state = None ) :
+    #
+    #     if state is None :
+    #         state = self.state
+    #
+    #     return mean( state )
 
     def get_E_terms( self, X = None ) :
 
         if X is None :
-            X = self.get_state_vector()
+            X = self.state
 
         return self.H.get_contributions( X = X, connectivity = self.connectivity )
 
     def get_E( self, X = None ) :
 
         if X is None :
-            X = self.get_state_vector()
+            X = self.state
 
-        return self.H.get_energy( X = X, connectivity = self.connectivity )
+        self.E = self.H.get_energy( X = X, connectivity = self.connectivity )
+        return self.E
 
     def evolve( self, step_number = 1 ) :
 
         for _ in range( step_number ) :
 
+            if self.E is None :
+                self.get_E()
+
+            E_old = self.E
+
             # pick a node
             i = randint( 0, self.N - 1 )
 
-            # calculate energy jump associated to flipping this node
+            # flip it
 
-            dE = self.H.get_energy( X = self.get_state_vector(), i = i, connectivity = self.connectivity )
+            self.flip(i)
+
+            # calculate new energy
+
+            self.get_E()
+            dE = self.E - E_old
 
             if rand() < self.acceptance_probability( dE, self.beta ) :
-                # keep
+                # accept
+                pass
+            else :
+                # reject
                 self.flip(i)
+                self.E = E_old
+
 
     def get_neighbors_opinion( self ) :
         return neighbors_opinion( self.connectivity, self.get_state_vector() )
@@ -132,11 +151,13 @@ if __name__ == '__main__' :
 
     C = ( rand(*[5]*2) > .5 )*1
 
-    H = Hamiltonian( terms = [neighbors_influence, polls_influence ], coeffs = [ 1, 1 ] )
+    H = Hamiltonian( terms = [ neighbors_influence, polls_influence ], coeffs = [ 1, 1 ] )
 
     pop = population( connectivity = C, H = H, beta = 1, state = None )
 
-    X = pop.get_state_vector()
+    X = pop.state
+    print(X)
+    print(pop.N)
 
     for term in [neighbors_influence, polls_influence ] :
         print( term.get_contribution( X, 1, connectivity = C ) )
@@ -146,9 +167,9 @@ if __name__ == '__main__' :
     print(pop.N)
 
     flip_i = 2
-    print(pop.get_state_vector(), pop.get_E())
+    print(pop.state, pop.get_E())
     pop.flip(flip_i)
-    print(pop.get_state_vector(), pop.get_E())
+    print(pop.state, pop.get_E())
 
 
     dE = linspace(-1/3,1,101)*6
