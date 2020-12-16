@@ -21,3 +21,9 @@ def number_of_like_minded_neighbors( connectivity, state_vector ) :
     no = ( state_vector < 0 )*1
 
     return yes_neighbors*yes + no_neighbors*no
+
+def herding_ratio( connectivity, state_vector ) :
+    return number_of_like_minded_neighbors( connectivity, state_vector )/number_of_neighbors( connectivity, state_vector )
+
+def energy_density( connectivity, state_vector ) :
+    return -( connectivity.dot( state_vector ) ).dot( state_vector )/len( state_vector )

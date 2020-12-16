@@ -22,17 +22,12 @@ def int_to_state_vector( state_int, N ):
 def state_vector_to_int( state_vect ):
     return int( '0b' + ''.join( [ str( ( spin + 1 )//2 ) for spin in state_vect ] ), 2 )
 
-def probability_Boltzmann( dE, beta ) :
-    p_Boltzmann = exp( -dE*beta )
-    return p_Boltzmann/( 1. + p_Boltzmann )
-
-def probability( dE, beta ) :
-    if dE*beta < -2 :
-        return 1
-    elif dE*beta > 2 :
-        return 0
-    else :
-        return .5 - dE*beta/4
+def default_acceptance_probability( dE, beta ) :
+    '''
+    Metropolis-Hasting acceptance probability.
+    a = min( [ 1, exp( -dE*beta ) ] )
+    '''
+    return min( [ 1, exp( -dE*beta ) ] )
 
 ##########################
 #
@@ -42,7 +37,7 @@ def probability( dE, beta ) :
 
 class population :
 
-    def __init__( self, connectivity, H, beta, state = None, **kwargs ) :
+    def __init__( self, connectivity, H, beta, state = None, acceptance_probability = None, **kwargs ) :
         '''
         state is an integer
         '''
@@ -51,6 +46,9 @@ class population :
         self.H = H
         self.beta = beta
         self.N = self.connectivity.shape[0]
+
+        if acceptance_probability is None :
+            self.acceptance_probability = default_acceptance_probability
 
         if state is None :
             self.new_deal()
@@ -112,9 +110,7 @@ class population :
 
             dE = self.H.get_energy( X = self.get_state_vector(), i = i, connectivity = self.connectivity )
 
-            # keep or drop according to Boltzmann
-
-            if rand() < probability( dE, self.beta ) :
+            if rand() < self.acceptance_probability( dE, self.beta ) :
                 # keep
                 self.flip(i)
 
@@ -155,9 +151,9 @@ if __name__ == '__main__' :
     print(pop.get_state_vector(), pop.get_E())
 
 
-    dE = linspace(-1,1,100)*3
-    p = [ probability( dE_single, beta = 1 ) for dE_single in dE ]
+    dE = linspace(-1/3,1,101)*6
+    p = [ pop.acceptance_probability( dE_single, beta = 1 ) for dE_single in dE ]
     plot(dE, p )
-    fill_between(dE, p, alpha = .1 )
-    plot(dE, probability_Boltzmann(dE, beta = 1), '--')
+    title( pop.acceptance_probability.__doc__.split('\n')[1] )
+    fill_between( dE, p, alpha = .1 )
     show()
