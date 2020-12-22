@@ -1,6 +1,8 @@
 
-from scipy.sparse import csr_matrix
-from numpy import array
+from scipy.sparse import csr_matrix, triu
+from numpy import array, nan
+from matplotlib.pyplot import gca
+from networkx import adjacency_matrix, kamada_kawai_layout
 
 def triangle_to_edges( triangle ) :
     return [ tuple( sorted( [ triangle[ij[0]], triangle[ij[1]] ] ) ) for ij in [ [0,1], [1,2], [2,0] ] ]
@@ -20,6 +22,12 @@ def triangles_to_node_indices( triangles ) :
 
 def edges_to_connectivity( edges, size ) :
     return csr_matrix( ( [1]*len( edges ), array( edges ).T ), shape = [ size ]*2 ).transpose()
+
+def connectivity_to_edges( connectivity ) :
+
+    row, col = connectivity.nonzero()
+
+    return [ [ row[i], col[i] ] for i in range( len(row) ) ]
 
 def triangles_to_connectivity( triangles, size = None ) :
 
@@ -56,6 +64,98 @@ def dict_to_connectivity( dic ) :
 
     return csr_matrix( ( data, (dic['row'], dic['col'])), shape = dic['shape']  )
 
+def plot_edges( x, y, edges, ax = None, **kwargs ) :
+
+    x_p = []
+    y_p = []
+
+    for edge in edges :
+        i, j = edge
+        x_p += [ x[i], x[j], nan ]
+        y_p += [ y[i], y[j], nan ]
+
+    if ax is None :
+        ax = gca()
+
+    return ax.plot( x_p, y_p, **kwargs )
+
+
+
+def plot_connectivity( **kwargs ):
+    '''
+    Convenience function. Plots connectivity in the form of triangulation, connectivity matrix or edges.
+    '''
+
+    try :
+        ax = kwargs.pop('ax')
+    except :
+        ax = gca()
+
+    try :
+        triangulation = kwargs.pop('triangulation')
+        return ax.triplot( triangulation, **kwargs )
+
+    except :
+
+        x = kwargs.pop('x')
+        y = kwargs.pop('y')
+
+        try :
+            triangles = kwargs.pop('triangles')
+            return ax.triplot( x, y, triangles, **kwargs )
+
+        except :
+
+            try :
+                edges = kwargs.pop('edges')
+
+            except :
+                connectivity = kwargs.pop('connectivity')
+                edges = connectivity_to_edges( connectivity )
+
+
+            return plot_edges( x, y, edges, ax = ax, **kwargs )
+
+def extract_mesh_data( p_mesh ) :
+
+    for mesh_keys in [ ['triangulation'], ['x','y','triangles'], [ 'x', 'y', 'edges' ], ['x','y', 'connectivity'] ] :
+
+        try :
+            mesh_data = {}
+
+            for key in mesh_keys :
+                mesh_data[ key ] = p_mesh[ key ]
+
+            return mesh_data
+
+        except :
+            pass
+
+
+def graph_to_edges( graph, layout = None ) :
+
+    '''
+    Convert networkx graph into nodes and edges.
+    '''
+
+    if layout is None :
+        layout = kamada_kawai_layout
+
+    connectivity = triu( adjacency_matrix(graph) )
+    pos = layout(graph)
+
+    N = connectivity.shape[0]
+
+    x = [0]*N
+    y = [0]*N
+
+    for i in range( N ) :
+        x[i], y[i] = pos[i].tolist()
+
+    edges = array( connectivity_to_edges( connectivity ) ).tolist()
+
+    return x, y, edges
+
 if __name__ == '__main__' :
 
     from pylab import *
@@ -65,14 +165,19 @@ if __name__ == '__main__' :
     y = rand(len(x))
     Th = Triangulation( x, y )
 
-    figure('mesh')
-    triplot(Th)
-    axis('equal')
-
     edges = triangles_to_edges( Th.triangles )
 
     M1 = triangulation_to_connectivity( Th )
     M2 = triangles_to_connectivity( Th.triangles )
+
+
+    figure('mesh')
+    plot_connectivity( triangulation = Th )
+    # plot_edges(x,y,edges)
+    plot_connectivity( x = x, y = y, connectivity = M1, color = 'r', linestyle = '--' )
+
+    axis('equal')
+
 
     print(M1)
     M3 = connectivity_to_dict(M2)
