@@ -144,9 +144,24 @@ class population :
 
 if __name__ == '__main__' :
 
-    # print(help(randint))
-
     from pylab import *
+
+    print('Test state vector to int:')
+
+    sqrt_N = 100
+    N = sqrt_N**2
+    print('N =',N)
+    X = 2*( rand(N) > .5 ) - 1
+
+    imshow(X.reshape([sqrt_N]*2))
+
+    X_c = int_to_state_vector( int( str( state_vector_to_int( X ) ) ), N )
+    print( sum( X-X_c )==0 )
+
+    print('------------------------')
+
+
+
     from Hamiltonian import *
 
     C = ( rand(*[5]*2) > .5 )*1
@@ -174,6 +189,7 @@ if __name__ == '__main__' :
 
     dE = linspace(-1/3,1,101)*6
     p = [ pop.acceptance_probability( dE_single, beta = 1 ) for dE_single in dE ]
+    figure()
     plot(dE, p )
     title( pop.acceptance_probability.__doc__.split('\n')[1] )
     fill_between( dE, p, alpha = .1 )

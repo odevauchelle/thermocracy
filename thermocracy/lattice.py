@@ -38,6 +38,14 @@ def triangles_to_connectivity( triangles, size = None ) :
 
     return edges_to_connectivity( edges, size )
 
+def normalize_connectivity( connectivity, axis = 0 ) :
+
+    connectivity += connectivity.T
+
+    connectivity = connectivity.multiply( 1./connectivity.sum( axis = axis ) )
+
+    return connectivity
+
 def triangulation_to_connectivity( Th ) :
     return csr_matrix( ( [1]*len( Th.edges ), Th.edges.T ), shape = [ len( Th.x ) ]*2 )
 
@@ -170,6 +178,16 @@ if __name__ == '__main__' :
     M1 = triangulation_to_connectivity( Th )
     M2 = triangles_to_connectivity( Th.triangles )
 
+    print('Test normalize_connectivity')
+    M = M1
+    print( M.toarray() )
+    M = normalize_connectivity( M )
+    print( M.toarray() )
+
+
+    print('---------------------------')
+
+
 
     figure('mesh')
     plot_connectivity( triangulation = Th )
@@ -179,9 +197,9 @@ if __name__ == '__main__' :
     axis('equal')
 
 
-    print(M1)
+    # print(M1)
     M3 = connectivity_to_dict(M2)
-    print(type(M3['col'][0]))
-    print(dict_to_connectivity(connectivity_to_dict(M2, with_data = False )))
+    # print(type(M3['col'][0]))
+    # print(dict_to_connectivity(connectivity_to_dict(M2, with_data = False )))
 
     show()
