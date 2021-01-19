@@ -40,7 +40,7 @@ def triangles_to_connectivity( triangles, size = None ) :
 
 def normalize_connectivity( connectivity, axis = 0 ) :
 
-    connectivity += connectivity.T
+    connectivity = ( connectivity + connectivity.T )/2
 
     connectivity = connectivity.multiply( 1./connectivity.sum( axis = axis ) )
 
