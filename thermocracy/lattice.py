@@ -51,6 +51,8 @@ def normalize_connectivity( connectivity, axis = 0 ) :
 
     return connectivity
 
+def triangularize_connectivity( connectivity ) :
+    return 2*sparse_triu( connectivity )
 
 def triangulation_to_connectivity( Th ) :
     return csr_matrix( ( [1]*len( Th.edges ), Th.edges.T ), shape = [ len( Th.x ) ]*2 )
