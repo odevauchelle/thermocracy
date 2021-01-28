@@ -1,5 +1,6 @@
 
-from scipy.sparse import csr_matrix, triu
+from scipy.sparse import csr_matrix
+from scipy.sparse import triu as sparse_triu
 from numpy import array, nan
 from matplotlib.pyplot import gca
 from networkx import adjacency_matrix, kamada_kawai_layout
@@ -40,11 +41,16 @@ def triangles_to_connectivity( triangles, size = None ) :
 
 def normalize_connectivity( connectivity, axis = 0 ) :
 
-    connectivity = ( connectivity + connectivity.T )/2
+    connectivity += connectivity.T # in case input is not symmetric
 
     connectivity = connectivity.multiply( 1./connectivity.sum( axis = axis ) )
 
+    connectivity += connectivity.T
+
+    connectivity /= connectivity.sum()/connectivity.count_nonzero()
+
     return connectivity
+
 
 def triangulation_to_connectivity( Th ) :
     return csr_matrix( ( [1]*len( Th.edges ), Th.edges.T ), shape = [ len( Th.x ) ]*2 )
@@ -89,7 +95,7 @@ def plot_edges( x, y, edges, ax = None, **kwargs ) :
 
 
 
-def plot_connectivity( **kwargs ):
+def plot_connectivity( show_link_strength = True, **kwargs ):
     '''
     Convenience function. Plots connectivity in the form of triangulation, connectivity matrix or edges.
     '''
@@ -116,13 +122,47 @@ def plot_connectivity( **kwargs ):
 
             try :
                 edges = kwargs.pop('edges')
+                return plot_edges( x, y, edges, ax = ax, **kwargs )
 
             except :
-                connectivity = kwargs.pop('connectivity')
-                edges = connectivity_to_edges( connectivity )
+
+                C = kwargs.pop('connectivity')
+                C_max = C.max()
+
+                if show_link_strength :
+
+                    x = array(x)
+                    y = array(y)
+
+                    try :
+                        base_line_width = kwargs.pop( 'linewidth' )
+                    except :
+                        base_line_width = rcParams['lines.linewidth']
+
+                    try :
+                        base_alpha = kwargs.pop( 'alpha' )
+                    except :
+                        base_alpha = 1
+
+                    try :
+                        color = kwargs.pop('color')
+                    except :
+                        color = 'tab:blue'
+
+                    for i in range( C.get_shape()[0] ) :
+                        for j in range(i) : # assumes matrix is symmetric
+                            if C[i,j] != 0 :
+                                ax.plot( x[[i,j]], y[[i,j]], color = color, lw = C[i,j]*base_line_width, alpha = C[i,j]*base_alpha/C_max, **kwargs  )
+
+                    return None
+
+                else :
+                    edges = connectivity_to_edges( connectivity )
+                    return plot_edges( x, y, edges, ax = ax, **kwargs )
 
 
-            return plot_edges( x, y, edges, ax = ax, **kwargs )
+
+
 
 def extract_mesh_data( p_mesh ) :
 
@@ -149,7 +189,7 @@ def graph_to_edges( graph, layout = None ) :
     if layout is None :
         layout = kamada_kawai_layout
 
-    connectivity = triu( adjacency_matrix(graph) )
+    connectivity = sparse_triu( adjacency_matrix( graph ) )
     pos = layout(graph)
 
     N = connectivity.shape[0]
@@ -164,12 +204,18 @@ def graph_to_edges( graph, layout = None ) :
 
     return x, y, edges
 
+##############################
+#
+# TRY IT OUT
+#
+##############################
+
 if __name__ == '__main__' :
 
     from pylab import *
     from matplotlib.tri import Triangulation
 
-    x = rand(6)
+    x = rand(15)
     y = rand(len(x))
     Th = Triangulation( x, y )
 
@@ -180,9 +226,14 @@ if __name__ == '__main__' :
 
     print('Test normalize_connectivity')
     M = M1
+    print('Original')
     print( M.toarray() )
+
     M = normalize_connectivity( M )
+    print('Normalized')
     print( M.toarray() )
+    print('Mean non-zero coefficient')
+    print( mean( M.toarray()[ M.toarray() != 0 ] ) )
 
 
     print('---------------------------')
@@ -190,9 +241,10 @@ if __name__ == '__main__' :
 
 
     figure('mesh')
-    plot_connectivity( triangulation = Th )
     # plot_edges(x,y,edges)
-    plot_connectivity( x = x, y = y, connectivity = M1, color = 'r', linestyle = '--' )
+    plot_connectivity( x = x, y = y, connectivity = M1 )
+    plot_connectivity( triangulation = Th, color = 'r', linestyle = '--', alpha = .3 )
+
 
     axis('equal')
 
@@ -201,5 +253,19 @@ if __name__ == '__main__' :
     M3 = connectivity_to_dict(M2)
     # print(type(M3['col'][0]))
     # print(dict_to_connectivity(connectivity_to_dict(M2, with_data = False )))
+
+    figure()
+
+    from networkx import barabasi_albert_graph
+
+    graph = barabasi_albert_graph( n = 70, m = 2)
+
+    x, y, edges = graph_to_edges( graph )
+    C = normalize_connectivity( edges_to_connectivity( edges, size = len(x) ) )
+    plot_connectivity( x = x, y = y, connectivity = C )
+    axis('equal')
+
+    print('Mean non-zero coefficient')
+    print( mean( C.toarray()[ C.toarray() != 0 ] ) )
 
     show()
