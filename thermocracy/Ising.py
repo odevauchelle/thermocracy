@@ -74,7 +74,14 @@ class population :
         return state_vector_to_int( self.state )
 
     def set_state( self, state ) :
-        self.state = state
+
+        try :
+            state[0]
+            self.state = state
+            
+        except :
+            self.state = int_to_state_vector( state, self.N )
+
         self.E = None
 
     def flip( self, i ) :
