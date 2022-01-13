@@ -1,7 +1,7 @@
 
 from scipy.sparse import csr_matrix
 from scipy.sparse import triu as sparse_triu
-from numpy import array, nan
+from numpy import array, nan, mean
 from matplotlib.pyplot import gca
 from networkx import adjacency_matrix, kamada_kawai_layout
 
@@ -56,6 +56,9 @@ def triangularize_connectivity( connectivity ) :
 
 def triangulation_to_connectivity( Th ) :
     return csr_matrix( ( [1]*len( Th.edges ), Th.edges.T ), shape = [ len( Th.x ) ]*2 )
+
+def get_average_number_of_neighbors( connectivity ) :
+    return connectivity.sum()/( connectivity.shape[0] )
 
 def connectivity_to_dict( connectivity, with_data = True ) :
 

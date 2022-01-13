@@ -1,3 +1,6 @@
+def opinion_to_percentage(opinion) :
+
+    return ( opinion + 1 )*50
 
 def neighbors_opinion( connectivity, state ) :
 

@@ -37,9 +37,9 @@ def default_acceptance_probability( dE, beta ) :
 
 class population :
 
-    def __init__( self, connectivity, H, beta, state = None, acceptance_probability = None, **kwargs ) :
+    def __init__( self, connectivity, H = None, beta = None, state = None, acceptance_probability = None, **kwargs ) :
         '''
-        state is an integer
+        state is a list of -1 and 1
         '''
 
         self.connectivity = csr_matrix( connectivity )
@@ -55,7 +55,10 @@ class population :
             self.new_deal()
 
         else :
-            self.state = state
+            try :
+                self.state = state_vector_to_int( state )
+            except :
+                self.state = state
 
     def plot_connectivity( self, *args, **kwargs ) :
         plot_connectivity( self.connectivity, *args, **kwargs   )
@@ -66,9 +69,9 @@ class population :
             magnetization = 0.
 
         self.set_state( ( rand( self.N ) < ( 1 + magnetization )/2 )*2 - 1 )
-    #
-    # def get_state_vector( self ) :
-    #     return self.state
+
+    def get_state( self ) :
+        return self.state
 
     def get_integer_state( self ) :
         return state_vector_to_int( self.state )
@@ -78,7 +81,7 @@ class population :
         try :
             state[0]
             self.state = state
-            
+
         except :
             self.state = int_to_state_vector( state, self.N )
 
@@ -88,12 +91,12 @@ class population :
         self.state[i] *= -1
         self.E = None
 
-    # def get_opinion( self, state = None ) :
-    #
-    #     if state is None :
-    #         state = self.state
-    #
-    #     return mean( state )
+    def get_opinion( self, state = None ) :
+
+        if state is None :
+            state = self.state
+
+        return mean( state )
 
     def get_E_terms( self, X = None ) :
 
