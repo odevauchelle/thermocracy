@@ -1,3 +1,5 @@
+from numpy import array, shape
+
 def opinion_to_percentage(opinion) :
 
     return ( opinion + 1 )*50
@@ -12,9 +14,9 @@ def neighbors_opinion( connectivity, state ) :
 
     return yes_neighbors, no_neighbors
 
-def number_of_neighbors( connectivity, state ) :
+def number_of_neighbors( connectivity ) :
 
-    return ( connectivity + connectivity.T )*abs( state )
+    return ( connectivity + connectivity.T )*array( [1]*shape(connectivity)[0] )
 
 def number_of_like_minded_neighbors( connectivity, state ) :
 
@@ -26,7 +28,7 @@ def number_of_like_minded_neighbors( connectivity, state ) :
     return yes_neighbors*yes + no_neighbors*no
 
 def herding_ratio( connectivity, state ) :
-    return number_of_like_minded_neighbors( connectivity, state )/number_of_neighbors( connectivity, state )
+    return number_of_like_minded_neighbors( connectivity, state )/number_of_neighbors( connectivity )
 
 def energy_density( H, connectivity, state ) :
     return H.get_energy( connectivity = connectivity, X = state )/len(state)

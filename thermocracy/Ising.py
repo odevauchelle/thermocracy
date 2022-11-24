@@ -22,12 +22,23 @@ def int_to_state_vector( state_int, N ):
 def state_vector_to_int( state_vect ):
     return int( '0b' + ''.join( [ str( ( spin + 1 )//2 ) for spin in state_vect ] ), 2 )
 
-def default_acceptance_probability( dE, beta ) :
+def Metropolis_Hasting_acceptance_probability( dE, beta ) :
     '''
     Metropolis-Hasting acceptance probability
     a = min( [ 1, exp( -dE*beta ) ] )
     '''
     return min( [ 1, exp( -dE*beta ) ] )
+
+def Glauber_acceptance_probability( dE, beta ) :
+    '''
+    Glauber acceptance probability
+    '''
+
+    ex = exp(-dE*beta)
+
+    return ex/(1 + ex)
+
+default_acceptance_probability = Glauber_acceptance_probability
 
 ##########################
 #
