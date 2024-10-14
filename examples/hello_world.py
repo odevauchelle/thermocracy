@@ -5,20 +5,37 @@ sys.path.append('./../')
 
 import thermocracy as thm
 
+nb_of_nodes = 50
+connectivity = ( rand( *[nb_of_nodes]*2 ) > .9 )*1
+
 H = thm.Hamiltonian( terms = [ thm.neighbors_influence, thm.polls_influence ], coeffs = [ 1, 1 ] )
+pop = thm.population( connectivity = connectivity, H = H, beta = .2, state = None )
 
-pop = thm.population( connectivity = ( rand(*[15]*2) > .5 )*1, H = H, beta = 2, state = None )
+X_mean = [ mean( pop.state ) ]
 
-X_mean = [ mean( pop.get_state_vector() ) ]
-
-for _ in range(100)   :
+for _ in range(300)   :
     pop.evolve(10)
-    X_mean += [ mean( pop.get_state_vector() ) ]
+    X_mean += [ mean( pop.state ) ]
+
+theta =  linspace( 0, 2*pi, nb_of_nodes + 1 )[:-1]
+x, y = cos(theta), sin(theta)
+
+
 
 figure()
-thm.plot_connectivity(pop.connectivity)
+thm.plot_connectivity( connectivity = pop.connectivity, x = x, y = y, color = 'LightGrey' )
+plus = pop.state > 0
+plot( x[plus], y[plus],'o', color = 'tab:blue')
+plot( x[~plus], y[~plus],'o', color = 'tab:orange')
+
+axis('equal')
+axis('off')
+# savefig('Connectivity.svg', bbox_inches = 'tight')
 
 figure()
-hist( X_mean, bins = linspace(-1,1,10) )
+plot( X_mean )
+xlabel('time')
+ylabel('Magnetization')
+# savefig('Magnetization.svg', bbox_inches = 'tight')
 
 show()

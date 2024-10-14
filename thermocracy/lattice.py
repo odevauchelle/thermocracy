@@ -2,7 +2,7 @@
 from scipy.sparse import csr_matrix
 from scipy.sparse import triu as sparse_triu
 from numpy import array, nan, mean
-from matplotlib.pyplot import gca
+from matplotlib.pyplot import gca, rcParams
 from networkx import adjacency_matrix, kamada_kawai_layout
 
 def triangle_to_edges( triangle ) :
