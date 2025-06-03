@@ -1,6 +1,6 @@
 from scipy.sparse import csr_matrix
 from random import getrandbits, randint
-from scipy import array, rand, mean, exp, vectorize
+from scipy import array, rand, mean, exp, vectorize, where
 
 if __name__ == '__main__' :
     from graphics import plot_connectivity
@@ -123,6 +123,44 @@ class population :
 
         self.E = self.H.get_energy( X = X, connectivity = self.connectivity )
         return self.E
+
+    def evolve_with_delay( self, delay_step_number, step_number = 1 ) :
+
+        for _ in range( step_number ) :
+
+            if self.E is None :
+                self.get_E()
+            
+            E_old = self.E
+            
+            flipped = [ False ]*self.N
+
+            for __ in range( delay_step_number ) :
+
+                # pick a node
+                i = randint( 0, self.N - 1 )
+
+                # flip it
+
+                self.flip(i)
+
+                # calculate new energy
+
+                self.get_E()
+                dE = self.E - E_old
+
+                # flip it back
+
+                self.flip(i)               
+
+                if rand() < self.acceptance_probability( dE, self.beta ) :
+                    flipped[i] = True
+            
+            # Now flip those who owe to
+
+            for i in where( flipped ) :
+                self.flip(i)
+
 
     def evolve( self, step_number = 1 ) :
 
