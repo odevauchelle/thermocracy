@@ -124,41 +124,35 @@ class population :
         self.E = self.H.get_energy( X = X, connectivity = self.connectivity )
         return self.E
 
-    def evolve_with_delay( self, delay_step_number, step_number = 1 ) :
+    def evolve_with_delay( self, tau, step_number = 1 ) :
 
+        E_neighbors, E_polls = self.get_contributions()
+        E_old = self.E
+        
         for _ in range( step_number ) :
 
             if self.E is None :
                 self.get_E()
             
-            E_old = self.E
-            
-            flipped = [ False ]*self.N
+            E_old = ( 1 - 1/tau )*E_old + ( 1/tau )*self.E
 
-            for __ in range( delay_step_number ) :
+            # pick a node
+            i = randint( 0, self.N - 1 )
 
-                # pick a node
-                i = randint( 0, self.N - 1 )
+            # flip it
 
-                # flip it
+            self.flip(i)
 
-                self.flip(i)
+            # calculate new energy
 
-                # calculate new energy
+            self.get_E()
+            dE = self.E - E_old
 
-                self.get_E()
-                dE = self.E - E_old
-
-                # flip it back
-
-                self.flip(i)               
-
-                if rand() < self.acceptance_probability( dE, self.beta ) :
-                    flipped[i] = True
-            
-            # Now flip those who owe to
-
-            for i in where( flipped ) :
+            if rand() < self.acceptance_probability( dE, self.beta ) :
+                # accept
+                pass
+            else :
+                # reject
                 self.flip(i)
 
 
