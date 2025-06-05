@@ -29,12 +29,12 @@ def Metropolis_Hasting_acceptance_probability( dE, beta ) :
     '''
     return min( [ 1, exp( -dE*beta ) ] )
 
-def Glauber_acceptance_probability( dE, beta ) :
+def Glauber_acceptance_probability( dE, beta, memory = 0 ) :
     '''
     Glauber acceptance probability
     '''
 
-    ex = exp(-dE*beta)
+    ex = exp( -dE*beta - memory )
 
     return ex/(1 + ex)
 
@@ -48,7 +48,7 @@ default_acceptance_probability = Glauber_acceptance_probability
 
 class population :
 
-    def __init__( self, connectivity, H = None, beta = None, state = None, acceptance_probability = None, **kwargs ) :
+    def __init__( self, connectivity, H = None, beta = None, memory = 0, state = None, acceptance_probability = None, **kwargs ) :
         '''
         state is a list of -1 and 1
         '''
@@ -56,11 +56,12 @@ class population :
         self.connectivity = csr_matrix( connectivity )
         self.H = H
         self.beta = beta
+        self.memory = memory
         self.N = self.connectivity.shape[0]
         self.E = None
 
         if acceptance_probability is None :
-            self.acceptance_probability = default_acceptance_probability
+            self.acceptance_probability = lambda dE : default_acceptance_probability( dE, beta = self.beta, memory = self.memory )
 
         if state is None :
             self.new_deal()
@@ -124,36 +125,36 @@ class population :
         self.E = self.H.get_energy( X = X, connectivity = self.connectivity )
         return self.E
 
-    def evolve_with_delay( self, tau, step_number = 1 ) :
+    # def evolve_with_delay( self, tau, step_number = 1 ) :
 
-        E_neighbors, E_polls = self.get_contributions()
-        E_old = self.E
+    #     E_neighbors, E_polls = self.get_contributions()
+    #     E_old = self.E
         
-        for _ in range( step_number ) :
+    #     for _ in range( step_number ) :
 
-            if self.E is None :
-                self.get_E()
+    #         if self.E is None :
+    #             self.get_E()
             
-            E_old = ( 1 - 1/tau )*E_old + ( 1/tau )*self.E
+    #         E_old = ( 1 - 1/tau )*E_old + ( 1/tau )*self.E
 
-            # pick a node
-            i = randint( 0, self.N - 1 )
+    #         # pick a node
+    #         i = randint( 0, self.N - 1 )
 
-            # flip it
+    #         # flip it
 
-            self.flip(i)
+    #         self.flip(i)
 
-            # calculate new energy
+    #         # calculate new energy
 
-            self.get_E()
-            dE = self.E - E_old
+    #         self.get_E()
+    #         dE = self.E - E_old
 
-            if rand() < self.acceptance_probability( dE, self.beta ) :
-                # accept
-                pass
-            else :
-                # reject
-                self.flip(i)
+    #         if rand() < self.acceptance_probability( dE, self.beta ) :
+    #             # accept
+    #             pass
+    #         else :
+    #             # reject
+    #             self.flip(i)
 
 
     def evolve( self, step_number = 1 ) :
@@ -177,7 +178,7 @@ class population :
             self.get_E()
             dE = self.E - E_old
 
-            if rand() < self.acceptance_probability( dE, self.beta ) :
+            if rand() < self.acceptance_probability( dE ) :
                 # accept
                 pass
             else :
