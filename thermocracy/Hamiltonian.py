@@ -93,9 +93,12 @@ neighbors_influence = HTerm(
     function_E = lambda X, connectivity, **kwargs: -( connectivity.dot( X ) ).dot( X )
     )
 
+def imperfect_polls( sample ):
+    return HTerm( name = 'imperfect_polls', function_E = lambda X, **kwargs: sum( X )*mean( X[sample] ) )
+
 polls_influence = HTerm(
     name = 'polls',
-    function_E = lambda X, **kwargs: mean(X)**2*len(X)
+    function_E = lambda X, **kwargs: mean( X )**2*len( X )
     )
 
 bias = HTerm(
