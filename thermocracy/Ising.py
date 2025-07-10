@@ -110,81 +110,52 @@ class population :
 
         return mean( state )
 
-    def get_E_terms( self, X = None ) :
+    def get_E_terms( self, X = None, **kwargs ) :
 
         if X is None :
             X = self.state
 
-        return self.H.get_contributions( X = X, connectivity = self.connectivity )
+        return self.H.get_contributions( X = X, connectivity = self.connectivity, **kwargs )
 
-    def get_E( self, X = None ) :
+    def get_E( self, X = None, **kwargs ) :
 
         if X is None :
             X = self.state
 
-        self.E = self.H.get_energy( X = X, connectivity = self.connectivity )
+        self.E = self.H.get_energy( X = X, connectivity = self.connectivity, **kwargs )
         return self.E
 
-    # def evolve_with_delay( self, tau, step_number = 1 ) :
+    def evolve_once( self, **kwargs ) :
 
-    #     E_neighbors, E_polls = self.get_contributions()
-    #     E_old = self.E
-        
-    #     for _ in range( step_number ) :
+        if self.E is None :
+            self.get_E( **kwargs )
 
-    #         if self.E is None :
-    #             self.get_E()
-            
-    #         E_old = ( 1 - 1/tau )*E_old + ( 1/tau )*self.E
+        E_old = self.E
 
-    #         # pick a node
-    #         i = randint( 0, self.N - 1 )
+        # pick a node
+        i = randint( 0, self.N - 1 )
 
-    #         # flip it
+        # flip it
 
-    #         self.flip(i)
+        self.flip(i)
 
-    #         # calculate new energy
+        # calculate new energy
 
-    #         self.get_E()
-    #         dE = self.E - E_old
+        self.get_E( **kwargs )
+        dE = self.E - E_old
 
-    #         if rand() < self.acceptance_probability( dE, self.beta ) :
-    #             # accept
-    #             pass
-    #         else :
-    #             # reject
-    #             self.flip(i)
+        if rand() < self.acceptance_probability( dE ) :
+            # accept
+            pass
+        else :
+            # reject
+            self.flip(i)
+            self.E = E_old
 
-
-    def evolve( self, step_number = 1 ) :
+    def evolve( self, step_number = 1, **kwargs ) :
 
         for _ in range( step_number ) :
-
-            if self.E is None :
-                self.get_E()
-
-            E_old = self.E
-
-            # pick a node
-            i = randint( 0, self.N - 1 )
-
-            # flip it
-
-            self.flip(i)
-
-            # calculate new energy
-
-            self.get_E()
-            dE = self.E - E_old
-
-            if rand() < self.acceptance_probability( dE ) :
-                # accept
-                pass
-            else :
-                # reject
-                self.flip(i)
-                self.E = E_old
+            self.evolve_once( **kwargs )
 
 
     def get_neighbors_opinion( self ) :
@@ -195,6 +166,12 @@ class population :
 
     def get_number_of_like_minded_neighbors( self ) :
         return number_of_like_minded_neighbors( self.connectivity, self.get_state_vector() )
+
+########################
+#
+# Try it out
+#
+########################
 
 if __name__ == '__main__' :
 

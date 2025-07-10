@@ -106,6 +106,11 @@ bias = HTerm(
     function_E = lambda X, **kwargs: sum(X)
 )
 
+external_field = HTerm(
+    name = 'external field',
+    function_E = lambda X, h, **kwargs: sum(X)*h
+)
+
 ##########################
 #
 # Sandbox
