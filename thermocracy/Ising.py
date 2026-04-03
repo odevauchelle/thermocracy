@@ -1,6 +1,7 @@
 from scipy.sparse import csr_matrix
 from random import getrandbits, randint
-from scipy import array, rand, mean, exp, vectorize, where
+from numpy import array, mean, exp, vectorize, where
+from pylab import rand
 
 if __name__ == '__main__' :
     from graphics import plot_connectivity

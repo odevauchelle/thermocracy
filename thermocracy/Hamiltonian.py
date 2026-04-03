@@ -1,6 +1,7 @@
 from scipy.sparse import csr_matrix
 from random import getrandbits, randint
-from scipy import array, rand, mean, exp
+from numpy import array, mean, exp
+from pylab import rand
 
 ##########################
 #
